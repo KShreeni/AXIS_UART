@@ -134,7 +134,7 @@ always@(posedge clk or posedge rst)begin
      wr_ptr <= wr_ptr + 1;
      count <= count + 1;
    end
-   if(rd_en && !empty)begin  
+   else if(rd_en && !empty)begin  
      dout <= mem_data[rd_ptr];
      dout_last <= mem_last[rd_ptr];
      rd_ptr <= rd_ptr + 1;
