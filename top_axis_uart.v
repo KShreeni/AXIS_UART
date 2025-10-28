@@ -65,11 +65,18 @@ wire[WIDTH-1:0] fifo_out;
 wire fifo_out_last;
 wire fifo_full,fifo_empty;
 wire fifo_wr_en,fifo_rd_en;
+reg uart_valid_temp;
 
 assign s_axis_ready = !fifo_full;
 assign fifo_wr_en = s_axis_valid && s_axis_ready;
 
-wire uart_valid = !fifo_empty;
+always@(posedge clk or posedge rst)begin
+if(rst)
+ uart_valid_temp <= 0;
+else 
+ uart_valid_temp <= !fifo_empty;
+ end
+wire uart_valid = uart_valid_temp;
 wire uart_ready;
 
 assign fifo_rd_en = uart_valid && uart_ready;
@@ -82,7 +89,8 @@ uart_tx #(.clk_rate(CLK_RATE),.Baud(BAUD),.Word_len(WIDTH)) uart_inst(.clk(clk),
 .tx_data(fifo_out),.tx_data_valid(uart_valid),.tx_data_ready(uart_ready),.tx_data_last(fifo_out_last),
 .Uart_tx(uart_tx));
 
-endmodule
+
+endmodule    
 
 
 module sync_fifo #(parameter WIDTH=8,DEPTH=8)
@@ -221,23 +229,23 @@ module uart_tx #(
             Uart_tx <= 1'b1;
             parity_bit <= 1'b0;
         end else begin
-            case (current_state)
+             case (current_state)
                 Idle: begin
                     baud_cnt <= 0;
                     bit_cnt <= 0;
                     Uart_tx <= 1'b1;
-                    if (tx_data_valid && tx_data_ready) begin
-                        shift_reg <= tx_data;
-                       
-                        if (PARITY == "even")
-                            parity_bit <= ^tx_data;
-                      //  else if (PARITY == "odd")
-                       //     parity_bit <= ~^tx_data;
-                        else parity_bit <= parity_bit;
-                    end
+                   
                 end
                 
                 Start: begin
+                 if (tx_data_valid) begin
+                        shift_reg <= tx_data;
+                        // Pre-calculate the parity bit
+                        if (PARITY == "even")
+                            parity_bit <= ^tx_data;
+                        else if (PARITY == "odd")
+                            parity_bit <= ~^tx_data;
+                    end
                     Uart_tx <= 1'b0;
                     if (baud_cnt == (Baud_div - 1))
                         baud_cnt <= 0;
