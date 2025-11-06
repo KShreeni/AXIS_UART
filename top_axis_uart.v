@@ -366,7 +366,7 @@ module uart_rec #(
                     next_state = START;
             end
             START: begin
-                if (baud_cnt == (BAUD_DIV-2))
+                if (baud_cnt == (BAUD_DIV-3))
                     next_state = DATA;
             end
             DATA: begin
